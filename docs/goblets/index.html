@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no">
+  	
+<title>GobletModel</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.13.0/css/all.css">
+<link rel="stylesheet" href="./src/goblet-style.css">
+
+<script src="./src/artistoo/artistoo.js"></script>
+
+<!-- Model scripts -->
+<script src="./src/artistoo/invasion-constraints.js"></script>
+<script src="./src/model/configuration.js"></script>
+<script src="./src/model/init.js"></script>
+<script src="./src/model/dynamics.js"></script>
+<script src="./src/model/drawing.js"></script>
+<script src="./src/controls/sliders.js"></script>
+
+<script>
+"use strict"
+
+
+
+/*	---------------------------------- */
+let CBact, CEpi, CAct, CInf,
+	GMBact, GMEpi, GMAct, GMInf,
+	CimEpi, CimBact, CimAct, CimInf
+	
+// variables
+let phagocytosisEffectiveRate, infectionEffectiveRate, attachEffectiveRate, detachEffectiveRate,
+	bacteriaCentroids, cometMemory,
+	phagocytosisEvents, infectionEvents, attachedNum, infectedGoblets, running = false, goblets,
+	minColor, maxColor
+
+
+function computeStep(){
+	CEpi.timeStep()
+	CAct.timeStep()
+	for( let t=0; t < conf.bactRelSpeed; t++ ){ 
+		CBact.timeStep()
+		if ( t% 10 == 0 ) updateComets()
+		updatePhagocytosed()
+		updateInfected()
+	}
+	//updateComets()
+	CInf.timeStep()
+	logOutputs()	
+	draw()
+	if( CEpi.time >= conf.runtime ){
+		running = false
+	}
+}
+
+function step(){
+	if( running )	computeStep()
+	requestAnimationFrame( step )
+}
+
+function logTime(){
+	//CEpi.time is in MCS = seconds, code below puts it in hh:mm:ss format.
+	document.getElementById("time").innerHTML = new Date( CEpi.time*1000).toISOString().substr(11,8) + " (hh:mm:ss)"
+}
+
+function logOutputs(){
+	logTime()
+	
+	document.getElementById("phagocytosed").innerHTML = phagocytosisEvents
+	document.getElementById("infBact").innerHTML = infectionEvents
+	document.getElementById("attBact").innerHTML = attachedNum
+	document.getElementById("infGob").innerHTML = infectedGoblets
+	document.getElementById("totGob").innerHTML = Object.keys(goblets).length
+	document.getElementById("totGob2").innerHTML = Object.keys(goblets).length
+	document.getElementById("nepi").innerHTML = CEpi.cellvolume.length - 1 
+	
+	// log bacterial tracks and phagocyte tracks once every 5 MCS
+	if( document.getElementById("recTracks").checked && CEpi.time % 10 == 0 ){
+	
+		const centroidsPhagocytes = CAct.getStat( CPM.CentroidsWithTorusCorrection )
+		const centroidsBacteria = CBact.getStat( CPM.CentroidsWithTorusCorrection )
+		let outString = ""
+		for( let cid of CAct.cellIDs() ){
+			outString += "ph" + cid + "\t" + CEpi.time + "\t" + centroidsPhagocytes[cid].join("\t") + "\n"
+		}
+		for( let cid of CBact.cellIDs() ){
+			outString += "bac" + cid + "\t" + CEpi.time + "\t" + centroidsBacteria[cid].join("\t") + "\n"
+		}
+		document.getElementById("tracksOut").innerHTML += outString		
+		
+	}
+	
+	
+}
+
+function resetSim(){
+	if( running ) running = false
+	cleanOutputs()
+	initialize()
+	draw()
+}
+
+
+</script>
+</head>
+<body onload="initializeTogglers();initialize();step();setSliders();initializeSliders();initZoom()">
+
+<div class="pageContainer">
+
+	<h1>Host-pathogen dynamics and invasion efficiency</h1>
+	<p> 
+	Bacteria (Listeria) follow a persistent random walk on top 
+	of the gut epithelium (gray), where they try to invade the goblet cells (blue). 
+	Bacteria are hunted by phagocytes (purple).
+	</p>
+	
+	<div class="row sliderContainer">
+		<div class="parmWrapper">
+			<div class="col-12">
+				<p class="containerTitle">Simulation parameters
+					<button type="button" class="btn btn-toggle">
+					<span class="toggle-icon fa fa-chevron-down"></span></button>
+				</p>
+			</div>
+			<div class="row parmBox collapsed">
+	
+				<div class="parmWrapper">
+					<div class="col-12">
+						<p>Bacteria:
+							<button type="button" class="btn btn-toggle">
+							<span class="toggle-icon fa fa-chevron-down"></span></button>
+						</p>
+					</div>
+					<div id="bactParBox" class="row parmBox collapsed">
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>&lambda;<sub>dir</sub></p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="1000" id="ldirbact" oninput="setLambdaDirBacteria(this.value);emptyConf()" >
+							  <output class="bubble"></output>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Allows persistent motion of the bacteria; when zero, they only "diffuse".</p>
+						</div>
+			
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>Speed</p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="200" id="relvbact" oninput="setBactRelSpeed(this.value);emptyConf()" >
+							  <output class="bubble"></output>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Proxy of bacterial "speed"; the number of time steps in the bacterial
+							CPM during one time step of the epidermis/phagocyte models.</p>
+						</div>
+						
+						
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>k<sub>attach</sub> (x1000)</p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="1000" id="katt" oninput="setAttachRate(this.value);emptyConf()" >
+							  <span class="bubble" id="kattOut"></span>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Attachment rate (s<sup>-1</sup>). Each second, a fraction k<sub>attach</sub>
+							of bacteria currently overlapping a goblet cell will attach to it.
+							Once attached, they can either invade or detach after some time.
+							Note: cumulative chances that a given contact will lead to attachment are different,
+							depending on how many seconds it takes the bacterium to "cross" the
+							goblet. </p>
+						</div>
+						
+						
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>k<sub>detach</sub> (x1000)</p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="1000" id="kdet" oninput="setDetachRate(this.value);emptyConf()" >
+							  <span class="bubble" id="kdetOut"></span>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Detachment rate (s<sup>-1</sup>). Each second, a fraction k<sub>detach</sub>
+							of bacteria currently attached to a goblet cell will detach from it,
+							returning to the freely motile population. </p>
+						</div>
+			
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>k<sub>infect</sub> (x1000)</p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="1000" id="kinf" oninput="setInfectionRate(this.value);emptyConf()" >
+							  <span class="bubble" id="kinfOut"></span>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Infection rate (s<sup>-1</sup>). Each second, a fraction k<sub>infect</sub>
+							of bacteria attached to a goblet cell will infect it.
+							Note: cumulative chances that a given contact will lead to invasion 
+							are different, depending on how many seconds the attachment lasts. </p>
+						</div>
+					</div>
+				</div>
+				<div class="parmWrapper">
+					<div class="col-12">
+						<p>Phagocytes:
+							<button type="button" class="btn btn-toggle">
+							<span class="toggle-icon fa fa-chevron-down"></span></button>
+						</p>
+					</div>
+					<div id="phagocyteParBox" class="row parmBox collapsed">
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>&lambda;<sub>act</sub></p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="1000" id="lactph" oninput="setLambdaActPhagocytes(this.value);emptyConf()" >
+							  <output class="bubble"></output>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Scales the migration "force" of the protrusion of phagocytes; higher values tend to give both higher speeds and more persistent motion.</p>
+						</div>
+			
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>max<sub>act</sub></p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="50" id="mactph" oninput="setMaxActPhagocytes(this.value);emptyConf()" >
+							  <output class="bubble"></output>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Scales temporal stability of the feedback in the protruding region; 
+							higher values tend to yield broader, more persistent cells.</p>
+						</div>
+			
+						<div class="col-4 col-sm-2 col-md-2">
+							<p>k<sub>&phi;</sub> (x1000)</p>
+						</div>
+						<div class="col-8 col-sm-4 col-md-4">
+							<div class="range-wrap">
+							  <input type="range" class="range" min="0" max="1000" id="kphi" oninput="setPhagocytosisRate(this.value);emptyConf()" >
+							  <span class="bubble" id="kphiOut"></span>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6 col-md-6 parm-desc">
+							<p>Phagocytosis rate (step<sup>-1</sup>). Each step, bactera
+							overlapping a phagocyte are phagocytosed with p = k<sub>&phi;</sub>.
+							Note: cumulative chances are larger since bacteria "cross" the
+							phagocytes in multiple steps. </p>
+						</div>
+			
+					</div>
+				</div>		
+			</div>
+		</div>	
+	</div>
+	<br>
+	<div class="row sliderContainer">
+
+	<div class="parmWrapper">
+		<div class="col-12">
+			<p> <span class="containerTitle">Visualization settings</span>
+			(All layers are simulated; this is just for the drawing)
+				<button type="button" class="btn btn-toggle">
+				<span class="toggle-icon fa fa-chevron-down"></span></button>
+			</p>
+		</div>
+		<div class="row parmBox collapsed">
+
+			<div class = "col-12 col-sm-6 col-md-4 col-lg-3">
+			  <input type="checkbox" id="showEpidermis" name="showEpidermis"
+					 checked>
+			  <label for="showEpidermis">Epithelium/goblet cells</label><br>
+			  <input type="checkbox" id="showPhagocytes" name="showPhagocytes"
+					 checked>
+			  <label for="showPhagocytes">Phagocytes</label><br>
+			  <input type="checkbox" id="showAct" name="showAct"
+					 checked>
+			  <label for="showAct">Phagocytes (protrusion)</label><br>
+			  <input type="checkbox" id="washout" name="washout"
+					 checked>
+			  <label for="washout">Transparent filter</label><br>
+			  <input type="checkbox" id="showBacteria" name="showBacteria"
+					 checked>
+			  <label for="showBacteria">Bacteria</label><br>
+			  <input type="checkbox" id="showTraces" name="showTraces"
+					 checked>
+			  <label for="showTraces">Bacteria (comet trace)</label><br>
+			  <input type="checkbox" id="showInvaded" name="showInvaded"
+					 checked>
+			  <label for="showInvaded">Bacteria (in goblets)</label><br>
+			</div>
+			<div class = "col-12 col-sm-6 col-md-4 col-lg-3">
+				<p>Epithelium:</p>
+				<table>
+				<tr>
+					<td>Color:</td><td><input id="epiCol" type="text" value="EEEEEE" style="width:60px" 
+						oninput="viz.epitheliumColor = this.value;emptyViz()"></td>
+				</tr><tr>
+					<td>Border:</td><td><input id="epiBorder" type="text" value="AAAAAA" style="width:60px" 
+						oninput="viz.epitheliumBorder = this.value;emptyViz()"></td>
+				</tr><tr>
+					<td>Goblets:</td><td><input id="gobCol" type="text" value="0000CC" style="width:60px" 
+						oninput="viz.gobletColor = this.value;emptyViz()"></td>
+				</tr></table>
+			</div>
+			<div class = "col-12 col-sm-6 col-md-4 col-lg-3">
+				<p>Phagocytes:</p>
+				<table>
+				<tr>
+					<td>Color:</td><td><input id="phCol" type="text" value="DD00DD" style="width:60px" 
+						oninput="viz.phagocyteColor = this.value;emptyViz()"></td>
+				</tr><tr>
+					<td>Protrusion min:</td><td><input id="actMin" type="text" value="DD00DD" style="width:60px" 
+						oninput="viz.actGradientMin = this.value;emptyViz()"></td>
+				</tr><tr>
+					<td>Protrusion max:</td><td><input id="actMax" type="text" value="000000" style="width:60px" 
+						oninput="viz.actGradientMax = this.value;emptyViz()"></td>
+				</tr></table>
+			</div>
+			<div class = "col-12 col-sm-6 col-md-4 col-lg-3">
+				<p>Bacteria:</p>
+				<table>
+				<tr>
+					<td>Color:</td><td><input id="bacCol" type="text" value="000000" style="width:60px" 
+						oninput="viz.bacteriaColor = this.value;emptyViz()"></td>
+				</tr><tr>
+					<td>Comet color:</td><td><input id="cometCol" type="text" value="FF0000" style="width:60px" 
+						oninput="viz.cometColor = this.value;emptyViz()"></td>
+				</tr><tr>
+					<td>Attached color:</td><td><input id="attCol" type="text" value="000000" style="width:60px" 
+						oninput="viz.attachedColor = this.value;emptyViz()"></td>
+				</tr><tr>
+					<td>Invaded color:</td><td><input id="invCol" type="text" value="000000" style="width:60px" 
+						oninput="viz.invadedColor = this.value;emptyViz()"></td>
+				</tr></table>
+			</div>
+		</div>
+	</div>
+</div>
+	<br>
+	<div class="row sliderContainer">
+		<div class="col-12">
+			<p ><span class="containerTitle">Simulation controls</span><br>
+			These only take effect when you reset (&nbsp;<i class="fas fa-redo"></i>&nbsp;). 
+			The same settings + parameters + random seed should yield the exact same output every time.</p>
+		</div>
+		<div class="row sim-controls">
+			<div class="col-12">
+				<button id="playPause" class="btn"><span id="playIcon" class="fa fa-play"></span></button>
+				
+				Seed:&nbsp;
+				<input id="rseed" type="text" value="1"  style="width:40px" oninput="setSeed(this.value);emptyConf()">&nbsp;&nbsp;
+				&#x23; Goblets:&nbsp;
+				<input id="ngob" type="text" value="3"  style="width:40px" oninput="conf.nGoblet = parseInt(this.value);emptyConf()">&nbsp;&nbsp;
+				&#x23; Phagocytes:&nbsp;
+				<input id="nph" type="text" value="5"  style="width:40px" oninput="conf.nPh = parseInt(this.value);emptyConf()">&nbsp;&nbsp;
+				&#x23; Bacteria:&nbsp;
+				<input id="nbac" type="text" value="40"  style="width:40px" oninput="conf.nBac = parseInt(this.value);emptyConf()">&nbsp;&nbsp;
+				<input type="checkbox" id="initCirc" name="initCirc" >
+			  	<label for="initCirc">in circle</label>
+				Runtime:&nbsp;
+				<input id="rt" type="text" value="1000"  style="width:50px" oninput="conf.runtime = parseInt(this.value);emptyConf()">&nbsp;&nbsp;
+				<button id="reset" class="btn"><i class="fa fa-redo"></i></button>
+			</div>
+			<br>
+			<div class="col-12">
+				 &nbsp;&nbsp;&nbsp;Record : &nbsp;&nbsp;&nbsp;
+				<input type="checkbox" id="recTracks" name="recTracks" >
+			  	<label for="recTracks">Tracks (bacteria&phagocytes)</label>
+			  	&nbsp;&nbsp;&nbsp;
+			  	<input type="checkbox" id="recEvents" name="recEvents" >
+			  	<label for="recEvents">Events (infection/phagocytosis)</label>
+			</div>
+			
+			
+		</div>
+	</div>
+
+	<div id="simulationContainer" class="simulationContainer">
+		<div id="EpiSim" style="position:absolute"></div>
+		<div id="ActSim" style="position:absolute"></div>
+		<div id="BacSim" style="position:absolute"></div>
+		<div id="InfSim" style="position:absolute"></div>
+		<div class="timeLogContainer">
+			<p class="logger">Epithelial layer with <span id="nepi"></span> cells, of which <span id="totGob"></span> goblet cells. Scale bar: 20 pixels = 10 &mu;m<br>
+			Time: <span id="time"></span>. Phagocytosed : <span id="phagocytosed"></span><br>
+			Infection: <span id="attBact"></span> bacteria attached and <span id="infBact"></span> invaded in <span id="infGob"></span>/<span id="totGob2"></span> goblet cells.</p>
+		</div>
+	</div>
+	
+	<div class="row sliderContainer">
+		<div class="parmWrapper">
+			<div class="col-12">
+				<p> <span class="containerTitle">Exports</span>
+				(Save current settings)
+					<button type="button" class="btn btn-toggle">
+					<span class="toggle-icon fa fa-chevron-down"></span></button>
+				</p>
+			</div>
+			<div class="row parmBox collapsed">
+				<div class="col-12">Click the button to retrieve current settings, then 
+				copy-paste from the text area into a file of your choice.</div>
+				<div class="col-12 col-md-6">
+					<p>Model configuration: <button type="button" class="btn" onclick="getConf()"><i class="fas fa-download"></i></button></p>
+					<textarea id="confSettings" class="input" placeholder="Parameters"></textarea>
+				</div>
+				<div class="col-12 col-md-6">
+					<p>Visualization settings: <button type="button" class="btn" onclick="getViz()"><i class="fas fa-download"></i></button></p>
+					<textarea id="vizSettings" class="input" placeholder="Visualization settings"></textarea>
+				</div>
+			</div>
+		</div>
+	</div>
+	<br>
+	<div class="row sliderContainer">
+		<div class="parmWrapper">
+			<div class="col-12">
+				<p> <span class="containerTitle">Outputs</span>
+				(Data from the simulation)
+					<button type="button" class="btn btn-toggle">
+					<span class="toggle-icon fa fa-chevron-down"></span></button>
+				</p>
+			</div>
+			<div class="row parmBox collapsed">
+				<div class="col-12 col-md-6">
+					<p>Cell tracks:</p>
+					<textarea id="tracksOut" class="input" placeholder="Waiting until a simulation starts..."></textarea>
+				</div>
+				<div class="col-12 col-md-6">
+					<p>Events:</p>
+					<textarea id="eventsOut" class="input" placeholder="Waiting until a simulation starts..."></textarea>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+</body>
+<script src="./src/controls/pageSetup.js"></script>
+</html>
