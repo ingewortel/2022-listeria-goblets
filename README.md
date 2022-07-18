@@ -4,7 +4,7 @@ This repository will contain code and a simulation accompanying the manuscript "
 
 ## Online model
 
-
+The model described in the manuscript is accessible through: (https://ingewortel.github.io/2022-listeria-goblets/)[https://ingewortel.github.io/2022-listeria-goblets/]. 
 
 ## License
 
