@@ -1,0 +1,31 @@
+\documentclass[tikz]{standalone}
+
+
+\usepackage{graphicx}
+\usepackage{pxfonts}
+\newcommand{\figf}{\sffamily\bfseries}
+
+\begin{document}
+
+
+\begin{tikzpicture}[anchor = north west]
+
+	\clip (0,0) rectangle +(18,-8.5);
+
+	\begin{scope}[xshift=3cm]
+		\node at (0,-0.3) {\includegraphics{../plots/panel.pdf}};
+		\node at (0,0) {\figf A};
+		\node at (5.5,0) {\figf B};
+		\draw[dotted,line width=1pt] (1.35,-4.2) -- +(0,-0.5);
+		\draw[dotted,line width=1pt] (1.55,-3.8) -- +(0,-0.4) -- +(3.7,-0.9);
+	\end{scope}
+	\begin{scope}[xshift=8.3cm]
+		\draw[dotted,line width=1pt] (1.35,-4.2) -- +(0,-0.5);
+		\draw[dotted,line width=1pt] (1.55,-3.8) -- +(0,-0.4) -- +(3.7,-0.9);
+	\end{scope}
+
+	
+
+\end{tikzpicture}
+
+\end{document}

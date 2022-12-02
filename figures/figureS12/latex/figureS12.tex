@@ -1,0 +1,39 @@
+\documentclass[tikz]{standalone}
+
+
+\usepackage{graphicx}
+\usepackage{pxfonts}
+\newcommand{\figf}{\sffamily\bfseries}
+
+\begin{document}
+
+
+\begin{tikzpicture}[anchor = north west]
+
+	\clip (0,0) rectangle +(18,-10);
+
+	\begin{scope}
+		\node at (0,0) {\includegraphics{../plots/panelA-D.pdf}};
+		
+		\node at (0,0) {\figf A};
+		\node at (4.5,0) {\figf B};
+		\node at (9,0) {\figf C};
+		\node at (13.5,0) {\figf D};
+		
+	\end{scope}
+
+	\begin{scope}[yshift=-5cm]
+		\node at (0,0) {\includegraphics{../plots/panelE-H.pdf}};
+		
+		\node at (0,0) {\figf E};
+		\node at (4.5,0) {\figf F};
+		\node at (9,0) {\figf G};
+		\node at (13.5,0) {\figf H};
+		
+	\end{scope}
+
+	
+
+\end{tikzpicture}
+
+\end{document}

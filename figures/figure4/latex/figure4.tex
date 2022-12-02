@@ -1,0 +1,43 @@
+\documentclass[tikz]{standalone}
+
+
+\usepackage{graphicx}
+\usepackage{pxfonts}
+\newcommand{\figf}{\sffamily\bfseries\normalsize}
+
+
+\begin{document}
+
+\sffamily
+\scriptsize
+
+
+\begin{tikzpicture}[anchor = north west]
+
+	\clip (0,0) rectangle +(18,-10);
+
+	\begin{scope}
+		\node[scale=0.8] at (-0.1,0.2) {\includegraphics[page=1]{../img/model-setup.pdf}};
+		\node at (0,0) {\figf A};
+	\end{scope}
+
+
+	\begin{scope}[yshift=-5.6cm]
+		\node[scale=0.7] at (0.3,-0.3) {\includegraphics{../img/baseline-screenshots.pdf}};
+		\node at (0,0) {\figf B};
+	\end{scope}
+
+	\begin{scope}[yshift=-5.7cm,xshift=9.9cm]
+		\node at (3.2,-0.7) {\includegraphics{../plots/panelC2.pdf}};
+		\node at (0.1,-0.7) {\includegraphics{../plots/panelC1.pdf}};
+		\node at (1.7,-0.5) {goblet-specific};
+		\node at (4.5,-0.5) {equally permissive};
+		\node at (0,-0.1) {\figf C};
+	\end{scope}
+
+
+	
+
+\end{tikzpicture}
+
+\end{document}
