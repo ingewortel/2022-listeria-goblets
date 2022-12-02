@@ -1,6 +1,6 @@
 # A model of listeria-goblet cell interaction dynamics
 
-This repository will contain code and a simulation accompanying the manuscript "Listeria motility increases the efficiency of goblet cell invasion during intestinal infection"
+This repository contains code and a simulation accompanying the manuscript "Listeria motility increases the efficiency of epithelial invasion during intestinal infection"
 
 ## Online model
 
