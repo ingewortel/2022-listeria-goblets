@@ -11,7 +11,7 @@ To use the code, please make sure you have the following installed:
 
 - R (we tested using R version 4.2.1)
 
-- python v3, including the modules "Naked", "numpy", "pandas", "sys", "os", "multiprocessing"
+- python >v3.6, including the modules "Naked", "numpy", "pandas"
 (you only need this if you plan to re-run simulations in bulk, see below)
 
 - Basic command line tools such as "make", "awk", "bc" etc. On MacOS, look for xcode CLT.
@@ -22,7 +22,7 @@ To use the code, please make sure you have the following installed:
 - To make the full figure pdfs you will need latex (including the tikz package). 
  
 - nodejs and npm, which are needed for simulations in Figure4, Figure5, and some of the 
-supplementary figures. See (https://nodejs.org/en/download/)[https://nodejs.org/en/download/].
+supplementary figures. See https://nodejs.org/en/download/.
 
 
 After that, from the command line you can type:
@@ -35,6 +35,14 @@ This will also install the required node_modules (needed for simulations) and
 check if all the R packages are installed (if not, it will prompt you to install 
 them automatically). Alternatively, R packages are listed in Rpackages.txt and can be installed
 manually if you prefer. 
+
+If you run into problems installing the package geomtextpath (https://github.com/AllanCameron/geomtextpath), 
+try installing harfbuzz and fribidi first:
+
+- deb: libharfbuzz-dev libfribidi-dev (Debian, Ubuntu, etc)
+- rpm: harfbuzz-devel fribidi-devel (Fedora, EPEL)
+- csw: libharfbuzz_dev libfribidi_dev (Solaris)
+- brew: harfbuzz fribidi (OSX)
 
 
 ## How it works
