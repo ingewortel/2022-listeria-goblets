@@ -1,0 +1,10 @@
+name: listeria
+channels:
+ - conda-forge
+ - bioconda
+ - defaults
+dependencies:
+ - python=3.6
+ - r-base=4.2
+ - pandas
+ - numpy

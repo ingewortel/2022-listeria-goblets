@@ -7,12 +7,30 @@ run the code used to generate the figures, please read the following.
 
 ## Prerequisites
 
+### R and python
+
 To use the code, please make sure you have the following installed:
 
 - R (we tested using R version 4.2.1)
 
 - python >v3.6, including the modules "Naked", "numpy", "pandas"
 (you only need this if you plan to re-run simulations in bulk, see below)
+
+You can do this manually or if you have conda, run:
+
+```
+conda env create -f environment.yml
+conda activate listeria
+```
+
+Naked is not in conda repositories so still has to be installed: 
+
+```
+pip3 install Naked
+```
+
+### Other dependencies
+
 
 - Basic command line tools such as "make", "awk", "bc" etc. On MacOS, look for xcode CLT.
  On Linux, look for build-essential. On Windows, you may not be able to automatically 
@@ -24,6 +42,16 @@ To use the code, please make sure you have the following installed:
 - nodejs and npm, which are needed for simulations in Figure4, Figure5, and some of the 
 supplementary figures. See https://nodejs.org/en/download/.
 
+Standard package managers sometimes install incompatible versions of npm and nodejs. 
+To avoid this, you can install both at once using nvm:
+
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+nvm install --lts
+nvm use --lts
+```
+
+### Node modules and R packages
 
 After that, from the command line you can type:
 
