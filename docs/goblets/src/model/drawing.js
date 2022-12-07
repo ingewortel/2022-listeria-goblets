@@ -106,7 +106,7 @@ function drawComets(){
 			ctx.moveTo( start[0],start[1] )
 			for( let t = 1; t < trace.length; t++ ){
 				let end = [trace[t][0]*CimBact.zoom,trace[t][1]*CimBact.zoom]
-				if( ( Math.abs( start[0]-end[0] ) < 10 ) && ( Math.abs( start[1]-end[1] ) < 10 ) ){
+				if( ( Math.abs( start[0]-end[0] ) < 50 ) && ( Math.abs( start[1]-end[1] ) < 50 ) ){
 					ctx.lineTo( end[0],end[1])
 					ctx.moveTo( end[0],end[1])
 					start = end.slice()
