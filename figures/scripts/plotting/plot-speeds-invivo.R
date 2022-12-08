@@ -15,8 +15,12 @@ argv <- commandArgs( trailingOnly = TRUE )
 speedFile <- argv[1]
 outFile <- argv[2]
 
-d <- read.table( speedFile, header = TRUE, sep = "\t" ) %>%
-	pivot_longer( cols = 1:2, names_to = "cell", values_to = "speed" ) %>%
+# d <- read.table( speedFile, header = TRUE, sep = "\t" ) %>%
+# 	pivot_longer( cols = 1:2, names_to = "cell", values_to = "speed" ) %>%
+# 	mutate( cell = factor( cell, levels = c("Neutrophils","Lm.RT") ) ) %>%
+# 	na.omit()
+# 
+d <- read.csv( speedFile, header = TRUE ) %>%
 	mutate( cell = factor( cell, levels = c("Neutrophils","Lm.RT") ) ) %>%
 	na.omit()
 

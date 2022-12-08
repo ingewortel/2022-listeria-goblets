@@ -37,7 +37,17 @@ plots/panelC.pdf : ../scripts/plotting/plot-phag-motility-endstate.R \
 	Rscript $^ $@
 
 plots/panelE.pdf : ../scripts/plotting/plot-speeds-invivo.R \
-	input/neutrophils_lm_120ms.txt | plots
+	data/speeds.csv | plots
+	Rscript $^ $@
+
+	
+data/neutrophil-tracks.csv : pool-data.R | data
+	Rscript $< input/ex_vivo/neutrophils $@
+	
+data/Lm-tracks.csv : pool-data.R | data
+	Rscript $< input/ex_vivo/Lm $@
+
+data/speeds.csv : get-speeds.R data/neutrophil-tracks.csv data/Lm-tracks.csv
 	Rscript $^ $@
 
 # ************* SIMULATIONS
