@@ -1,5 +1,7 @@
 # A model of listeria-goblet cell interaction dynamics
 
+[![DOI](https://zenodo.org/badge/515284509.svg)](https://zenodo.org/badge/latestdoi/515284509)
+
 This repository contains code and a simulation accompanying the manuscript "Listeria motility increases the efficiency of epithelial invasion during intestinal infection"
 
 ## Code and data
