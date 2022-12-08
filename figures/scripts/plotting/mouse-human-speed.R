@@ -17,17 +17,15 @@ msdFile <- argv[2]
 outPlot <- argv[3]
 
 # DATA
-speedData <- read.csv2( "input/egd-mu-speed.csv" ) %>%
-	mutate( speed = D/60 ) %>%
-	mutate( listeria = sapply( I, function(x){unlist(strsplit(x,"_"))[2]} )) 
-
+speedData <- read.csv( dataFile, header = TRUE ) %>%
+	mutate( listeria = type, speed = v )
 lookUp <- c( "egd"="EGD", "lmina" = "Lm^'Mu'"  )
 speedData$listeria2 <- lookUp[ speedData$listeria ]
 
 
-msdData <- read.csv2( "input/egd-mu-msd.csv" )  %>%
-	mutate( speed = D/60 ) %>%
-	mutate( listeria = sapply( I, function(x){unlist(strsplit(x,"_"))[2]} )) 
+msdData <- read.csv( msdFile, header = TRUE )  %>%
+	mutate( speed = mean ) %>%
+	mutate( listeria = type ) 
 msdData$listeria2 <- lookUp[ msdData$listeria ]
 
 
@@ -61,18 +59,18 @@ pSpeedLog <- pSpeedNormal + scale_prettylog( "y", labellogs = seq( yrange[1], yr
 msdData$hjust <- ifelse( msdData$listeria == "egd", 0.7, 0.85 )
 
 # Compare MSD
-pMSD <- ggplot( msdData, aes ( x = T*60, y = D, group = listeria, color = listeria, fill = listeria ) ) +
-	geom_ribbon( aes( ymin = L, ymax = U ), alpha = 0.2, color = NA, show.legend = FALSE ) +
+pMSD <- ggplot( msdData, aes ( x = dt, y = mean, group = listeria, color = listeria, fill = listeria ) ) +
+	geom_ribbon( aes( ymin = lower, ymax = upper ), alpha = 0.2, color = NA, show.legend = FALSE ) +
 	#geom_line() +
 	#geom_textline( data = msdData[ msdData$listeria == "egd",], 
 	#	aes( label = listeria2 , vjust = -0.4, hjust = 0.6), parse = TRUE, size = 2, linewidth = .5, 
 	#	show.legend = FALSE) + 
 	geom_textline( 
-		aes( label = listeria2 , hjust = hjust), vjust = -1, parse = TRUE, size = 2, linewidth = .5, 
+		aes( label = listeria2 , hjust = hjust), vjust = -0.3, parse = TRUE, size = 2, linewidth = .5, 
 		show.legend = FALSE) + 
 	scale_color_manual( values = plotColors ) +
 	scale_fill_manual( values = plotColors ) +
-	scale_x_continuous( limits = c(0,max( msdData$T*60 )), expand = c(0,0) )+
+	scale_x_continuous( limits = c(0,max( msdData$dt )), expand = c(0,0) )+
 	scale_y_continuous( limits = c(-50,NA), expand = c(0,0) ) +
 	labs( x = expression( Delta*"t (sec)"),
 		y  = expression( MSD*" ("*mu*"m"^2*")"),

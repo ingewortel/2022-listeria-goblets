@@ -14,7 +14,7 @@ figureS1.pdf : latex/figureS1.pdf
 latex/figureS1.pdf : latex/figureS1.tex plots/panelA.pdf plots/panelB.pdf
 	cd latex && pdflatex figureS1.tex
 	
-plots/panelA.pdf : ../scripts/plotting/mouse-human-speed.R input/egd-mu-speed.csv input/egd-mu-msd.csv | plots
+plots/panelA.pdf : ../scripts/plotting/mouse-human-speed.R data/egd-mu-speed.csv data/egd-mu-msd.csv | plots
 	Rscript $^ $@
 	
 plots/panelB.pdf : ../scripts/plotting/check-MSD-fit.R data/bacteria-37-all.rds \
@@ -22,6 +22,13 @@ plots/panelB.pdf : ../scripts/plotting/check-MSD-fit.R data/bacteria-37-all.rds 
 	data/bootstrap-MSD-37-all.rds data/bootstrap-MSD-RT-all.rds data/bootstrap-MSD-RT-filtered.rds | plots
 	Rscript $^ $@	
 	
+
+data/egd-mu-speed.csv : gettracks.R input/Lm-InlA-RT_tracks.csv input/EGD-RT_tracks.csv | data
+	Rscript $^ $@ data/egd-mu-msd.csv
+	
+data/egd-mu-msd.csv : data/egd-mu-speed.csv
+	touch $@
+
 
 # =============== get data from figure 1 ("make" that one first)
 
