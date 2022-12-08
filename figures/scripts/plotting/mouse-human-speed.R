@@ -47,6 +47,7 @@ pSpeedNormal <- ggplot( speedData, aes( x = listeria2, y = speed, color = lister
                      yend = mu ) )+
     scale_color_manual( values = plotColors ) +
     scale_x_discrete( labels = label_parse() ) +
+    scale_y_continuous( limits = c(0,NA ) ) +
 	labs( x = NULL, y = expression( "track speed ("*mu*"m/s)")) +
 	mytheme + theme(
 		plot.margin = unit(c(0.1,0,0.1,0),"cm"),
